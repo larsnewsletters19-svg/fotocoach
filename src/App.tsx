@@ -9,6 +9,7 @@ import {
 } from './services/storage';
 import { analyzePhoto, retakePhoto, ApiError } from './services/anthropicClient';
 import { resizeImage } from './services/imageUtils';
+import { useTheme, resolveTheme } from './hooks/useTheme';
 import { ImagePicker } from './components/ImagePicker';
 import { AnalysisView } from './components/AnalysisView';
 import { RetakePanel } from './components/RetakePanel';
@@ -47,13 +48,27 @@ export default function App() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  // retake
   const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
-
   const [history, setHistory] = useState<HistoryItem[]>(() => loadHistory());
   const [viewingHistoryItem, setViewingHistoryItem] = useState<HistoryItem | null>(null);
 
-  // ─── Settings ───
+  // ─── Theme ───
+  useTheme(settings.theme ?? 'auto');
+
+  const resolvedTheme = resolveTheme(settings.theme ?? 'auto');
+
+  function cycleTheme() {
+    const order = ['auto', 'light', 'dark'] as const;
+    const current = settings.theme ?? 'auto';
+    const next = order[(order.indexOf(current) + 1) % order.length];
+    const updated = { ...settings, theme: next };
+    setSettings(updated);
+    saveSettings(updated);
+  }
+
+  const themeIcon = settings.theme === 'light' ? '☀️' : settings.theme === 'dark' ? '🌙' : '⚙️';
+
+  // ─── Settings & walk ───
   const handleSettingsChange = useCallback((s: AppSettings) => {
     setSettings(s); saveSettings(s);
   }, []);
@@ -97,7 +112,10 @@ export default function App() {
         stylePreference,
         analysisTone: settings.analysisTone,
         technicalLevel: settings.technicalLevel,
-        photoWalk: photoWalk.activeLensIds.length > 0 ? photoWalk : null,
+        photoWalk: photoWalk.cameraType === 'sony-a6700' && photoWalk.activeLensIds.length > 0
+          ? photoWalk
+          : photoWalk.cameraType !== 'sony-a6700' ? photoWalk : null,
+        cameraType: photoWalk.cameraType,
       });
       setAnalysisResult(result);
       setScreen('result');
@@ -120,9 +138,7 @@ export default function App() {
   }, [imageDataUrl, settings, motiveType, stylePreference, processedDataUrl, photoWalk]);
 
   // ─── Retake ───
-  const handleStartRetake = useCallback(() => {
-    setScreen('retake');
-  }, []);
+  const handleStartRetake = useCallback(() => setScreen('retake'), []);
 
   const handleCompareRetake = useCallback(async (retakeDataUrl: string): Promise<RetakeComparison> => {
     if (!analysisResult) throw new Error('Ingen originalanalys att jämföra med.');
@@ -132,7 +148,6 @@ export default function App() {
       apiKey: settings.anthropicApiKey,
       originalResult: analysisResult,
     });
-    // Persist retake to history
     if (currentHistoryId) {
       setHistory(updateHistoryItem(currentHistoryId, {
         retakeImageDataUrl: retakeDataUrl,
@@ -142,9 +157,7 @@ export default function App() {
     return comparison;
   }, [analysisResult, processedDataUrl, imageDataUrl, settings.anthropicApiKey, currentHistoryId]);
 
-  const handleRetakeDone = useCallback(() => {
-    setScreen('result');
-  }, []);
+  const handleRetakeDone = useCallback(() => setScreen('result'), []);
 
   // ─── Navigation ───
   const handleBack = useCallback(() => {
@@ -165,13 +178,16 @@ export default function App() {
 
   const handleClearHistory = useCallback(() => {
     if (window.confirm('Rensa all historik? Det går inte att ångra.')) {
-      clearHistory();
-      setHistory([]);
+      clearHistory(); setHistory([]);
     }
   }, []);
 
-  const walkIsActive = photoWalk.activeLensIds.length > 0;
   const canAnalyze = imageDataUrl !== null && !isAnalyzing;
+
+  const cameraLabel = photoWalk.cameraType === 'sony-a6700'
+    ? `Sony α6700 · ${photoWalk.activeLensIds.length} obj.`
+    : photoWalk.cameraType === 'iphone-16' ? 'iPhone 16'
+    : 'Samsung S25';
 
   return (
     <div className="app-container">
@@ -182,9 +198,19 @@ export default function App() {
           Fotocoach
           <span className="nav-version">v{APP_VERSION}</span>
         </div>
-        {tab === 'analyze' && screen === 'result' && analysisResult && (
-          <button className="nav-btn" onClick={handleNewPhoto} title="Ny analys">＋</button>
-        )}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <button
+            className="theme-toggle-btn"
+            onClick={cycleTheme}
+            title={`Tema: ${settings.theme ?? 'auto'} – tryck för att byta`}
+            aria-label="Byt tema"
+          >
+            {themeIcon}
+          </button>
+          {tab === 'analyze' && screen === 'result' && analysisResult && (
+            <button className="nav-btn" onClick={handleNewPhoto} title="Ny analys">＋</button>
+          )}
+        </div>
       </nav>
 
       <main className="main-content">
@@ -194,19 +220,23 @@ export default function App() {
           <>
             {screen === 'home' && (
               <div>
-                {walkIsActive && (
-                  <div className="walk-status-bar" onClick={() => setTab('walk')}>
-                    <span className="walk-status-dot" />
-                    <span className="walk-status-text">
-                      Fototur aktiv · <strong>{photoWalk.activeLensIds.length} obj.</strong>
-                    </span>
-                    {photoWalk.avoidLensSwap && <span className="walk-status-badge">Inget byte</span>}
-                    <span className="walk-status-arrow">→</span>
-                  </div>
-                )}
+                {/* Walk status pill */}
+                <div className="walk-status-bar" onClick={() => setTab('walk')}>
+                  <span className="walk-status-dot" />
+                  <span className="walk-status-text">
+                    {photoWalk.cameraType !== 'sony-a6700' ? '📱 ' : '📷 '}
+                    <strong>{cameraLabel}</strong>
+                  </span>
+                  {photoWalk.cameraType === 'sony-a6700' && photoWalk.avoidLensSwap && (
+                    <span className="walk-status-badge">Inget byte</span>
+                  )}
+                  <span className="walk-status-arrow">→</span>
+                </div>
+
                 <div className="card" style={{ marginBottom: 12 }}>
                   <ImagePicker imageDataUrl={imageDataUrl} onImageSelected={handleImageSelected} onImageCleared={handleImageCleared} />
                 </div>
+
                 <div className="card">
                   <div className="section-label">Motivtyp</div>
                   <div className="chip-group">
@@ -215,6 +245,7 @@ export default function App() {
                     ))}
                   </div>
                 </div>
+
                 <div className="card">
                   <div className="section-label">Bildstil</div>
                   <div className="chip-group">
@@ -223,6 +254,7 @@ export default function App() {
                     ))}
                   </div>
                 </div>
+
                 {analysisError && (
                   <div className="error-banner" style={{ marginTop: 12 }}>
                     <span className="error-icon">⚠️</span>
@@ -232,6 +264,7 @@ export default function App() {
                     </div>
                   </div>
                 )}
+
                 {!settings.anthropicApiKey && (
                   <div className="error-banner" style={{ marginTop: 12, borderColor: 'var(--verdict-adjust-border)', background: 'var(--verdict-adjust-bg)' }}>
                     <span className="error-icon" style={{ color: 'var(--verdict-adjust)' }}>🔑</span>
@@ -241,6 +274,7 @@ export default function App() {
                     </div>
                   </div>
                 )}
+
                 <button className="btn btn-analyze" onClick={handleAnalyze} disabled={!canAnalyze}>
                   {isAnalyzing ? <><span className="spinner" />Analyserar...</> : <>📡 Analysera bilden</>}
                 </button>
@@ -281,7 +315,7 @@ export default function App() {
           <>
             <div className="page-header">
               <div className="page-title">Fototur</div>
-              <div className="page-subtitle">Välj objektiv och vad som sitter på kameran</div>
+              <div className="page-subtitle">Välj kamera och utrustning</div>
             </div>
             <PhotoWalkPanel walk={photoWalk} onChange={handlePhotoWalkChange} />
           </>
@@ -298,7 +332,7 @@ export default function App() {
                   onBack={handleBack}
                   onNewPhoto={handleNewPhoto}
                 />
-                {viewingHistoryItem.retakeComparison && viewingHistoryItem.retakeImageDataUrl && (
+                {viewingHistoryItem.retakeComparison && (
                   <div className="card" style={{ marginTop: 12 }}>
                     <div className="card-header">
                       <span className="card-icon">🔄</span>
@@ -306,7 +340,7 @@ export default function App() {
                     </div>
                     <div className="info-row">
                       <div className="info-label">Resultat</div>
-                      <div className="info-value">{viewingHistoryItem.retakeComparison.retakeVerdict.replace('Ä', 'Ä')} · {viewingHistoryItem.retakeComparison.oneSentenceSummary}</div>
+                      <div className="info-value">{viewingHistoryItem.retakeComparison.oneSentenceSummary}</div>
                     </div>
                   </div>
                 )}
@@ -340,7 +374,7 @@ export default function App() {
           <div className="analyzing-spinner" />
           <div className="analyzing-text">Analyserar scoutingbild...</div>
           <div className="analyzing-subtext">
-            {walkIsActive ? 'Tar hänsyn till din fototur' : 'Claude bedömer komposition, ljus och potential'}
+            {resolvedTheme === 'light' ? 'Ljust tema aktivt' : 'Mörkt tema aktivt'} · {cameraLabel}
           </div>
         </div>
       )}
@@ -352,7 +386,9 @@ export default function App() {
         </button>
         <button className={`tab-item ${tab === 'walk' ? 'active' : ''}`} onClick={() => setTab('walk')}>
           <span className="tab-icon">🎒</span>Fototur
-          {walkIsActive && <span className="tab-badge">{photoWalk.activeLensIds.length}</span>}
+          {photoWalk.cameraType === 'sony-a6700' && photoWalk.activeLensIds.length > 0 && (
+            <span className="tab-badge">{photoWalk.activeLensIds.length}</span>
+          )}
         </button>
         <button className={`tab-item ${tab === 'history' ? 'active' : ''}`}
           onClick={() => { setTab('history'); setViewingHistoryItem(null); }}>

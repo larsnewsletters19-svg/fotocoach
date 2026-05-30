@@ -48,6 +48,41 @@
   --shadow-elevated: 0 4px 24px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4);
 }
 
+/* ─── Light theme ────────────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-base: #f5f4f0;
+  --bg-surface: #ffffff;
+  --bg-elevated: #eeece8;
+  --bg-hover: #e5e3de;
+
+  --border-subtle: rgba(0,0,0,0.06);
+  --border-default: rgba(0,0,0,0.12);
+  --border-strong: rgba(0,0,0,0.22);
+
+  --text-primary: #1a1814;
+  --text-secondary: #555250;
+  --text-tertiary: #999490;
+
+  --accent-amber: #c47d10;
+  --accent-amber-dim: rgba(196,125,16,0.10);
+  --accent-amber-glow: rgba(196,125,16,0.22);
+
+  --verdict-no: #c42020;
+  --verdict-no-bg: rgba(196,32,32,0.08);
+  --verdict-no-border: rgba(196,32,32,0.22);
+
+  --verdict-adjust: #b85f10;
+  --verdict-adjust-bg: rgba(184,95,16,0.08);
+  --verdict-adjust-border: rgba(184,95,16,0.22);
+
+  --verdict-go: #1e8c4a;
+  --verdict-go-bg: rgba(30,140,74,0.08);
+  --verdict-go-border: rgba(30,140,74,0.22);
+
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-elevated: 0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08);
+}
+
 html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
@@ -1868,4 +1903,150 @@ body {
   padding: 4px 8px;
   background: var(--bg-elevated);
   border-radius: var(--radius-sm);
+}
+
+/* ─── Camera selector (v0.6) ─────────────────────────────────────────────── */
+
+.camera-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.camera-selector-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  width: 100%;
+}
+
+.camera-selector-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.camera-selector-btn--active {
+  background: var(--accent-amber-dim);
+  border-color: var(--accent-amber);
+  color: var(--text-primary);
+}
+
+.camera-selector-emoji {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.camera-selector-text {
+  flex: 1;
+}
+
+.camera-selector-label {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: inherit;
+  margin-bottom: 2px;
+}
+
+.camera-selector-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.camera-selector-btn--active .camera-selector-sub {
+  color: var(--accent-amber);
+}
+
+/* ─── Theme toggle in nav (v0.6) ────────────────────────────────────────── */
+
+.theme-toggle-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* ─── Theme setting radio in settings (v0.6) ────────────────────────────── */
+
+.theme-radio-group {
+  display: flex;
+  gap: 8px;
+}
+
+.theme-radio-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theme-radio-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.theme-radio-btn.selected {
+  background: var(--accent-amber-dim);
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.theme-radio-emoji {
+  font-size: 22px;
+}
+
+/* ─── Light theme nav and tab overrides ─────────────────────────────────── */
+
+[data-theme="light"] .nav-bar {
+  background: rgba(245,244,240,0.92);
+}
+
+[data-theme="light"] .tab-bar {
+  background: rgba(245,244,240,0.97);
+}
+
+[data-theme="light"] .analyzing-overlay {
+  background: rgba(245,244,240,0.88);
+}
+
+[data-theme="light"] .spinner {
+  border-color: rgba(196,125,16,0.2);
+  border-top-color: var(--accent-amber);
 }

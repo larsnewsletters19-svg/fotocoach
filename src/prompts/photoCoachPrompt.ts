@@ -1,6 +1,7 @@
 import type { MotiveType, StylePreference, AnalysisTone, TechnicalLevel } from '../types/analysis';
-import type { PhotoWalkSettings } from '../types/settings';
+import type { PhotoWalkSettings, CameraType } from '../types/settings';
 import { getCameraContext, getLensContext, SONY_LENSES } from '../data/cameraData';
+import { getMobileCamera, getMobileCameraContext, getMobileLensContext } from '../data/mobileCameraData';
 
 export const SYSTEM_PROMPT = `Du är en erfaren fotograf, fotolärare och praktisk fotocoach. Du hjälper användaren att analysera en scoutingbild innan den riktiga bilden tas. Du ska svara på svenska. Du ska vara konkret, prioriterad och handlingsorienterad. Du ska bara returnera giltig JSON enligt angivet schema. Ingen markdown. Ingen text före eller efter JSON.
 
@@ -142,12 +143,65 @@ function buildPhotoWalkContext(walk: PhotoWalkSettings | null): string {
   return lines.join('\n');
 }
 
+function buildMobileWalkContext(walk: PhotoWalkSettings | null): string {
+  if (!walk) return '';
+  const lines: string[] = ['─── AKTUELL FOTOTUR ────────────────────────────────'];
+  if (walk.hasTriPod) lines.push('Stativ: ja (bra för lång exponering och nattbilder)');
+  if (walk.hasFilters) lines.push('Filter: ja');
+  if (walk.notes?.trim()) lines.push(`Turnotering: ${walk.notes}`);
+  lines.push('────────────────────────────────────────────────────');
+  return lines.join('\n');
+}
+
+function buildCameraSection(cameraType: CameraType, walk: PhotoWalkSettings | null): string {
+  if (cameraType === 'sony-a6700') {
+    const cameraCtx = getCameraContext();
+    const lensCtx = getLensContext();
+    const walkCtx = walk && walk.activeLensIds.length > 0 ? '\n' + buildPhotoWalkContext(walk) : '';
+    return `─── KAMERA ─────────────────────────────────────────
+${cameraCtx}
+
+─── ALLA TILLGÄNGLIGA OBJEKTIV ────────────────────
+${lensCtx}
+────────────────────────────────────────────────────${walkCtx}
+
+För cameraAdvice: ge råd specifika för Sony a6700 med dess objektiv. fileFormat ska alltid vara "RAW".`;
+  }
+
+  const mobile = getMobileCamera(cameraType);
+  if (!mobile) return '';
+  const cameraCtx = getMobileCameraContext(mobile);
+  const lensCtx = getMobileLensContext(mobile);
+  const walkCtx = walk ? '\n' + buildMobileWalkContext(walk) : '';
+
+  return `─── KAMERA ─────────────────────────────────────────
+${cameraCtx}
+
+─── TILLGÄNGLIGA LINSER ───────────────────────────
+${lensCtx}
+────────────────────────────────────────────────────${walkCtx}
+
+För cameraAdvice med mobil:
+- recommendedLens: ange vilken lins/zoom som passar scenen bäst
+- aperture: ange mobilkamerans fasta bländare för vald lins
+- shutterSpeed: ge rekommendation (t.ex. "Auto eller 1/500s i Pro-läge")
+- iso: ge rekommendation (t.ex. "Auto, max ISO 800")
+- focusMode: t.ex. "AE/AF-lock på motivet" eller "Kontinuerlig AF"
+- focusArea: t.ex. "Tryck på motivet för att låsa fokus"
+- driveMode: t.ex. "Volymknappen som slutare" eller "Självutlösare 2s"
+- whiteBalance: t.ex. "Auto" eller "Skugga"
+- fileFormat: "${mobile.id === 'iphone-16' ? 'ProRAW' : 'RAW (DNG) via Pro-läge'}"
+- extraTip: ge ett specifikt tips för ${mobile.brand} ${mobile.model}
+- Om mobilkameran passar scenen bättre än en systemkamera, säg det tydligt i oneSentenceReason`;
+}
+
 export function buildUserPrompt(params: {
   motiveType: MotiveType;
   stylePreference: StylePreference;
   analysisTone: AnalysisTone;
   technicalLevel: TechnicalLevel;
   photoWalk: PhotoWalkSettings | null;
+  cameraType: CameraType;
 }): string {
   const toneMap: Record<AnalysisTone, string> = {
     Uppmuntrande: 'Var varm och positiv i tonen men ändå tydlig och konkret med råden.',
@@ -161,9 +215,7 @@ export function buildUserPrompt(params: {
     Avancerad: 'Använd exakt fotografiskt språk. Anta att användaren förstår fototermer.',
   };
 
-  const cameraCtx = getCameraContext();
-  const lensCtx = getLensContext();
-  const walkCtx = buildPhotoWalkContext(params.photoWalk);
+  const cameraSection = buildCameraSection(params.cameraType, params.photoWalk);
 
   return `Analysera den bifogade scoutingbilden.
 
@@ -172,15 +224,10 @@ Motivtyp: ${params.motiveType}
 Ton: ${toneMap[params.analysisTone]}
 Teknisk nivå: ${levelMap[params.technicalLevel]}
 
-─── KAMERA ─────────────────────────────────────────
-${cameraCtx}
+${cameraSection}
 
-─── ALLA TILLGÄNGLIGA OBJEKTIV ────────────────────
-${lensCtx}
-────────────────────────────────────────────────────
-${walkCtx ? '\n' + walkCtx : ''}
 Returnera din analys som JSON enligt exakt det schema du fick i systeminstruktionen.
-Inkludera alltid ett fullständigt cameraAdvice-objekt med konkreta inställningar för Sony a6700.
+Inkludera alltid ett fullständigt cameraAdvice-objekt med konkreta inställningar för vald kamera.
 Ingen annan text utanför JSON.`;
 }
 
