@@ -87,6 +87,23 @@ export type AnalysisResult = {
   cameraAdvice?: CameraAdvice;      // v0.2 – optional for backward compat
 };
 
+// ─── Retake comparison (v0.4) ────────────────────────────────────────────────
+
+export type RetakeVerdict = 'BÄTTRE' | 'SÄMRE' | 'LIKNANDE' | 'TA_NU';
+
+export type RetakeComparison = {
+  retakeVerdict: RetakeVerdict;
+  overallImprovement: number;        // -10 to +10
+  oneSentenceSummary: string;
+  improvedAspects: string[];
+  remainingIssues: string[];
+  readyToShoot: boolean;
+  finalRecommendation: string;
+  compositionDelta: number;          // -10 to +10
+  lightDelta: number;
+  backgroundDelta: number;
+};
+
 // ─── Camera & lens profiles (v0.2+) ─────────────────────────────────────────
 
 export type LensProfile = {

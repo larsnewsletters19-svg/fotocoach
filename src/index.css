@@ -1630,3 +1630,156 @@ body {
   padding: 2px 7px;
   border-radius: 100px;
 }
+
+/* ─── Retake (v0.4) ──────────────────────────────────────────────────────── */
+
+.retake-reminder {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.retake-reminder-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+}
+
+.retake-reminder-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+
+.retake-reminder-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-amber-dim);
+  border: 1px solid var(--accent-amber-glow);
+  color: var(--accent-amber);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.retake-setup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.retake-setup-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.retake-setup-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.retake-setup-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+}
+
+/* Before / after comparison */
+.retake-before-after {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.retake-img-wrap {
+  flex: 1;
+  position: relative;
+}
+
+.retake-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  display: block;
+}
+
+.retake-img-label {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(0,0,0,0.7);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 7px;
+  border-radius: 100px;
+  backdrop-filter: blur(8px);
+}
+
+.retake-img-label--new {
+  background: rgba(232,168,51,0.85);
+  color: #0a0a0a;
+}
+
+.retake-arrow {
+  font-size: 20px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+/* Retake verdict card */
+.retake-verdict-card {
+  border-radius: var(--radius-xl);
+  border: 1px solid;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.retake-ready-badge {
+  background: var(--verdict-go-bg);
+  border: 1px solid var(--verdict-go-border);
+  color: var(--verdict-go);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 100px;
+  margin-top: 4px;
+}

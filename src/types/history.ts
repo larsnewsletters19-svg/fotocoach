@@ -1,4 +1,4 @@
-import type { MotiveType, StylePreference, AnalysisResult } from './analysis';
+import type { MotiveType, StylePreference, AnalysisResult, RetakeComparison } from './analysis';
 
 export type HistoryItem = {
   id: string;
@@ -7,6 +7,10 @@ export type HistoryItem = {
   motiveType: MotiveType;
   stylePreference: StylePreference;
   result: AnalysisResult;
+  // v0.4 retake
+  retakeImageDataUrl?: string;
+  retakeResult?: AnalysisResult;
+  retakeComparison?: RetakeComparison;
 };
 
 export const MAX_HISTORY_ITEMS = 8;

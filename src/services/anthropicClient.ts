@@ -1,8 +1,9 @@
-import type { MotiveType, StylePreference, AnalysisTone, TechnicalLevel, AnalysisResult } from '../types/analysis';
+import type { MotiveType, StylePreference, AnalysisTone, TechnicalLevel, AnalysisResult, RetakeComparison } from '../types/analysis';
 import type { PhotoWalkSettings } from '../types/settings';
 import { resizeImage, getBase64FromDataUrl } from './imageUtils';
 import { parseAnalysisResult } from './jsonParser';
 import { SYSTEM_PROMPT, buildUserPrompt } from '../prompts/photoCoachPrompt';
+import { RETAKE_SYSTEM_PROMPT, buildRetakeUserPrompt } from '../prompts/retakePrompt';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-sonnet-4-20250514';
@@ -160,4 +161,86 @@ export async function analyzePhoto(params: {
   }
 
   return parseAnalysisResult(textBlock.text);
+}
+
+// ─── Retake comparison (v0.4) ────────────────────────────────────────────────
+
+export async function retakePhoto(params: {
+  originalImageDataUrl: string;
+  retakeImageDataUrl: string;
+  apiKey: string;
+  originalResult: AnalysisResult;
+}): Promise<RetakeComparison> {
+  if (!params.apiKey || params.apiKey.trim().length < 10) {
+    throw new ApiError('API-nyckel saknas.', 'MISSING_API_KEY');
+  }
+
+  let originalImg: string;
+  let retakeImg: string;
+  try {
+    [originalImg, retakeImg] = await Promise.all([
+      resizeImage(params.originalImageDataUrl),
+      resizeImage(params.retakeImageDataUrl),
+    ]);
+  } catch {
+    throw new ApiError('Kunde inte bearbeta bilderna. Försök igen.');
+  }
+
+  const userPrompt = buildRetakeUserPrompt(params.originalResult);
+
+  let response: Response;
+  try {
+    response = await fetch(ANTHROPIC_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': params.apiKey.trim(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 1024,
+        system: RETAKE_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: { type: 'base64', media_type: 'image/jpeg', data: getBase64FromDataUrl(originalImg) },
+              },
+              {
+                type: 'image',
+                source: { type: 'base64', media_type: 'image/jpeg', data: getBase64FromDataUrl(retakeImg) },
+              },
+              { type: 'text', text: userPrompt },
+            ],
+          },
+        ],
+      }),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Okänt fel';
+    throw new ApiError(`Nätverksfel: ${message}`, 'NETWORK_ERROR');
+  }
+
+  if (!response.ok) {
+    if (response.status === 401) throw new ApiError('Ogiltig API-nyckel.', 'INVALID_API_KEY', 401);
+    if (response.status === 429) throw new ApiError('För många förfrågningar. Vänta och försök igen.', 'RATE_LIMIT', 429);
+    throw new ApiError(`API-fel (${response.status}).`, 'API_ERROR', response.status);
+  }
+
+  const data = await response.json() as Record<string, unknown>;
+  const content = data.content as Array<{ type: string; text?: string }> | undefined;
+  const textBlock = content?.find((b) => b.type === 'text');
+  if (!textBlock?.text) throw new ApiError('Tomt svar från AI.', 'EMPTY_RESPONSE');
+
+  try {
+    const raw = textBlock.text;
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    return JSON.parse(jsonMatch ? jsonMatch[0] : raw) as RetakeComparison;
+  } catch {
+    throw new ApiError('Kunde inte tolka jämförelsesvaret. Försök igen.', 'PARSE_ERROR');
+  }
 }

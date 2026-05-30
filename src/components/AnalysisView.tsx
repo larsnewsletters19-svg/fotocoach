@@ -10,9 +10,10 @@ interface AnalysisViewProps {
   result: AnalysisResult;
   onBack: () => void;
   onNewPhoto: () => void;
+  onRetake?: () => void;
 }
 
-export function AnalysisView({ imageDataUrl, result, onBack, onNewPhoto }: AnalysisViewProps) {
+export function AnalysisView({ imageDataUrl, result, onBack, onNewPhoto, onRetake }: AnalysisViewProps) {
   return (
     <div className="stagger">
       {/* Back */}
@@ -113,6 +114,16 @@ export function AnalysisView({ imageDataUrl, result, onBack, onNewPhoto }: Analy
       )}
 
       {/* Actions */}
+      {onRetake && (
+        <button
+          className="btn btn-secondary"
+          style={{ width: '100%', marginTop: 8, borderColor: 'var(--accent-amber-glow)', color: 'var(--accent-amber)' }}
+          onClick={onRetake}
+        >
+          🔄 Retake – ta ny scoutingbild och jämför
+        </button>
+      )}
+
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onBack}>
           ← Ny analys

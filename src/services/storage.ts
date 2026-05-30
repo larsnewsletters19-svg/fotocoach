@@ -69,6 +69,17 @@ export function addHistoryItem(item: HistoryItem): HistoryItem[] {
   return updated;
 }
 
+export function updateHistoryItem(id: string, patch: Partial<HistoryItem>): HistoryItem[] {
+  const history = loadHistory();
+  const updated = history.map((item) => item.id === id ? { ...item, ...patch } : item);
+  try {
+    localStorage.setItem(KEYS.HISTORY, JSON.stringify(updated));
+  } catch (e) {
+    console.error('Failed to update history item', e);
+  }
+  return updated;
+}
+
 export function clearHistory(): void {
   try {
     localStorage.removeItem(KEYS.HISTORY);

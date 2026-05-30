@@ -123,12 +123,12 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
         <div className="card">
           <div className="info-row">
             <div className="info-label">Version</div>
-            <div className="info-value">0.3.0 – Fototur och objektivprofiler</div>
+            <div className="info-value">0.4.0 – Retake-läge</div>
           </div>
           <div className="info-row">
             <div className="info-label">Kommande versioner</div>
             <div className="info-value">
-              Retake-läge, visuella overlays, personligt lärande
+              Visuella overlays, personligt lärande
             </div>
           </div>
         </div>
