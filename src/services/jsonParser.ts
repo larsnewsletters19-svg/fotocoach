@@ -65,5 +65,6 @@ function validateAnalysisResult(obj: unknown): AnalysisResult {
     throw new ParseError(`Ogiltigt verdict: ${result.verdict}`);
   }
 
+  // cameraAdvice is optional – don't throw if missing
   return result as unknown as AnalysisResult;
 }

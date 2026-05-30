@@ -3,6 +3,7 @@ import { VerdictCard } from './VerdictCard';
 import { PriorityActions } from './PriorityActions';
 import { CompositionCard } from './CompositionCard';
 import { LightCard } from './LightCard';
+import { CameraAdviceCard } from './CameraAdviceCard';
 
 interface AnalysisViewProps {
   imageDataUrl: string;
@@ -76,6 +77,11 @@ export function AnalysisView({ imageDataUrl, result, onBack, onNewPhoto }: Analy
 
       {/* Ljus */}
       <LightCard light={result.light} />
+
+      {/* Kameraråd Sony a6700 */}
+      {result.cameraAdvice && (
+        <CameraAdviceCard advice={result.cameraAdvice} />
+      )}
 
       {/* Lärdom */}
       {result.learningPoint && (

@@ -1,4 +1,5 @@
 import type { MotiveType, StylePreference, AnalysisTone, TechnicalLevel } from '../types/analysis';
+import { getCameraContext, getLensContext } from '../data/cameraData';
 
 export const SYSTEM_PROMPT = `Du är en erfaren fotograf, fotolärare och praktisk fotocoach. Du hjälper användaren att analysera en scoutingbild innan den riktiga bilden tas. Du ska svara på svenska. Du ska vara konkret, prioriterad och handlingsorienterad. Du ska bara returnera giltig JSON enligt angivet schema. Ingen markdown. Ingen text före eller efter JSON.
 
@@ -27,6 +28,8 @@ Ge max 5 priorityActions. Varje action ska innehålla:
 - impact: "high", "medium" eller "low"
 - effort: "low", "medium" eller "high"
 - timing: "now", "wait" eller "optional"
+
+För cameraAdvice: välj det objektiv från listan som passar scenen bäst. Ge konkreta inställningsrekommendationer specifika för Sony a6700. Om ett annat objektiv vore bättre än det som sitter på kameran, nämn det i recommendedLens men förklara i focalLengthReason att det kräver objektivbyte.
 
 Returnera alltid denna exakta JSON-struktur och ingenting annat:
 
@@ -68,7 +71,24 @@ Returnera alltid denna exakta JSON-struktur och ingenting annat:
   "backgroundAndDistractions": "...",
   "whatAlreadyWorks": ["...", "..."],
   "learningPoint": "...",
-  "nextShotChecklist": ["...", "...", "..."]
+  "nextShotChecklist": ["...", "...", "..."],
+  "cameraAdvice": {
+    "recommendedLens": "Sony 35mm f/1.8",
+    "focalLengthReason": "...",
+    "aperture": "f/2.8",
+    "apertureReason": "...",
+    "shutterSpeed": "1/500s",
+    "shutterReason": "...",
+    "iso": "ISO 400",
+    "isoReason": "...",
+    "focusMode": "AF-C med Real-time Tracking",
+    "focusArea": "Tracking: Expand Spot",
+    "focusModeReason": "...",
+    "driveMode": "Enkelbild",
+    "whiteBalance": "Auto",
+    "fileFormat": "RAW",
+    "extraTip": "..."
+  }
 }`;
 
 export function buildUserPrompt(params: {
@@ -89,6 +109,9 @@ export function buildUserPrompt(params: {
     Avancerad: 'Använd exakt fotografiskt språk. Anta att användaren förstår fototermer.',
   };
 
+  const cameraCtx = getCameraContext();
+  const lensCtx = getLensContext();
+
   return `Analysera den bifogade scoutingbilden.
 
 Motivtyp: ${params.motiveType}
@@ -96,5 +119,14 @@ Motivtyp: ${params.motiveType}
 Ton: ${toneMap[params.analysisTone]}
 Teknisk nivå: ${levelMap[params.technicalLevel]}
 
-Returnera din analys som JSON enligt exakt det schema du fick i systeminstruktionen. Ingen annan text.`;
+─── KAMERAUTRUSTNING ───────────────────────────────
+${cameraCtx}
+
+TILLGÄNGLIGA OBJEKTIV (välj det bäst lämpade för scenen):
+${lensCtx}
+────────────────────────────────────────────────────
+
+Returnera din analys som JSON enligt exakt det schema du fick i systeminstruktionen.
+Inkludera alltid ett fullständigt cameraAdvice-objekt med konkreta inställningar för Sony a6700.
+Ingen annan text utanför JSON.`;
 }
