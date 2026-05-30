@@ -1,16 +1,18 @@
 import { useState, useCallback } from 'react';
 import type { MotiveType, StylePreference, AnalysisResult } from './types/analysis';
-import type { AppSettings } from './types/settings';
+import type { AppSettings, PhotoWalkSettings } from './types/settings';
 import type { HistoryItem } from './types/history';
-import { loadSettings, saveSettings, loadHistory, addHistoryItem, clearHistory } from './services/storage';
+import { loadSettings, saveSettings, loadHistory, addHistoryItem, clearHistory, loadPhotoWalk, savePhotoWalk } from './services/storage';
 import { analyzePhoto, ApiError } from './services/anthropicClient';
 import { resizeImage } from './services/imageUtils';
 import { ImagePicker } from './components/ImagePicker';
 import { AnalysisView } from './components/AnalysisView';
 import { HistoryList } from './components/HistoryList';
 import { SettingsPanel } from './components/SettingsPanel';
+import { PhotoWalkPanel } from './components/PhotoWalkPanel';
+import { APP_VERSION } from './version';
 
-type Tab = 'analyze' | 'history' | 'settings';
+type Tab = 'analyze' | 'walk' | 'history' | 'settings';
 type Screen = 'home' | 'result';
 
 const MOTIVE_TYPES: MotiveType[] = [
@@ -29,38 +31,36 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('analyze');
   const [screen, setScreen] = useState<Screen>('home');
 
-  // Settings
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
+  const [photoWalk, setPhotoWalk] = useState<PhotoWalkSettings>(() => loadPhotoWalk());
 
-  // Image state
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [processedDataUrl, setProcessedDataUrl] = useState<string | null>(null);
 
-  // Selection state
   const [motiveType, setMotiveType] = useState<MotiveType>('Auto');
   const [stylePreference, setStylePreference] = useState<StylePreference>('Naturlig');
 
-  // Analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  // History
   const [history, setHistory] = useState<HistoryItem[]>(() => loadHistory());
   const [viewingHistoryItem, setViewingHistoryItem] = useState<HistoryItem | null>(null);
 
-  // Settings handler
   const handleSettingsChange = useCallback((newSettings: AppSettings) => {
     setSettings(newSettings);
     saveSettings(newSettings);
   }, []);
 
-  // Image handler
+  const handlePhotoWalkChange = useCallback((newWalk: PhotoWalkSettings) => {
+    setPhotoWalk(newWalk);
+    savePhotoWalk(newWalk);
+  }, []);
+
   const handleImageSelected = useCallback(async (dataUrl: string) => {
     setImageDataUrl(dataUrl);
     setAnalysisResult(null);
     setAnalysisError(null);
-    // Pre-process for display optimization
     try {
       const resized = await resizeImage(dataUrl);
       setProcessedDataUrl(resized);
@@ -76,7 +76,6 @@ export default function App() {
     setAnalysisError(null);
   }, []);
 
-  // Analysis
   const handleAnalyze = useCallback(async () => {
     if (!imageDataUrl) return;
     if (!settings.anthropicApiKey) {
@@ -95,12 +94,12 @@ export default function App() {
         stylePreference,
         analysisTone: settings.analysisTone,
         technicalLevel: settings.technicalLevel,
+        photoWalk: photoWalk.activeLensIds.length > 0 ? photoWalk : null,
       });
 
       setAnalysisResult(result);
       setScreen('result');
 
-      // Save to history
       const histItem: HistoryItem = {
         id: generateId(),
         createdAt: new Date().toISOString(),
@@ -122,9 +121,8 @@ export default function App() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [imageDataUrl, settings, motiveType, stylePreference, processedDataUrl]);
+  }, [imageDataUrl, settings, motiveType, stylePreference, processedDataUrl, photoWalk]);
 
-  // History handlers
   const handleSelectHistoryItem = useCallback((item: HistoryItem) => {
     setViewingHistoryItem(item);
   }, []);
@@ -136,7 +134,6 @@ export default function App() {
     }
   }, []);
 
-  // Navigation
   const handleBack = useCallback(() => {
     if (viewingHistoryItem) {
       setViewingHistoryItem(null);
@@ -155,6 +152,10 @@ export default function App() {
   }, []);
 
   const canAnalyze = imageDataUrl !== null && !isAnalyzing;
+  const walkIsActive = photoWalk.activeLensIds.length > 0;
+  const mountedLensName = walkIsActive && photoWalk.mountedLensId
+    ? photoWalk.mountedLensId.split('-').slice(1).join(' ')
+    : null;
 
   return (
     <div className="app-container">
@@ -163,23 +164,33 @@ export default function App() {
         <div className="nav-logo">
           <span className="nav-logo-dot" />
           Fotocoach
+          <span className="nav-version">v{APP_VERSION}</span>
         </div>
         {tab === 'analyze' && screen === 'result' && analysisResult && (
-          <button className="nav-btn" onClick={handleNewPhoto} title="Ny analys">
-            ＋
-          </button>
+          <button className="nav-btn" onClick={handleNewPhoto} title="Ny analys">＋</button>
         )}
       </nav>
 
-      {/* Main content */}
       <main className="main-content">
-        {/* ─── ANALYZE TAB ─────────────────────────────── */}
+
+        {/* ─── ANALYZE TAB ─── */}
         {tab === 'analyze' && (
           <>
-            {/* Home screen */}
             {screen === 'home' && (
               <div>
-                {/* Image picker */}
+                {/* Walk status pill */}
+                {walkIsActive && (
+                  <div className="walk-status-bar" onClick={() => setTab('walk')}>
+                    <span className="walk-status-dot" />
+                    <span className="walk-status-text">
+                      Fototur aktiv
+                      {mountedLensName && <> · <strong>{photoWalk.activeLensIds.length} obj.</strong></>}
+                    </span>
+                    {photoWalk.avoidLensSwap && <span className="walk-status-badge">Inget byte</span>}
+                    <span className="walk-status-arrow">→</span>
+                  </div>
+                )}
+
                 <div className="card" style={{ marginBottom: 12 }}>
                   <ImagePicker
                     imageDataUrl={imageDataUrl}
@@ -188,7 +199,6 @@ export default function App() {
                   />
                 </div>
 
-                {/* Motive type */}
                 <div className="card">
                   <div className="section-label">Motivtyp</div>
                   <div className="chip-group">
@@ -204,7 +214,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Style preference */}
                 <div className="card">
                   <div className="section-label">Bildstil</div>
                   <div className="chip-group">
@@ -220,7 +229,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Error */}
                 {analysisError && (
                   <div className="error-banner" style={{ marginTop: 12 }}>
                     <span className="error-icon">⚠️</span>
@@ -231,30 +239,25 @@ export default function App() {
                   </div>
                 )}
 
-                {/* No API key warning */}
                 {!settings.anthropicApiKey && (
                   <div className="error-banner" style={{ marginTop: 12, borderColor: 'var(--verdict-adjust-border)', background: 'var(--verdict-adjust-bg)' }}>
                     <span className="error-icon" style={{ color: 'var(--verdict-adjust)' }}>🔑</span>
                     <div className="error-content">
                       <div className="error-title" style={{ color: 'var(--verdict-adjust)' }}>API-nyckel saknas</div>
                       <div className="error-message">
-                        Gå till <strong>Inställningar</strong> och ange din Anthropic API-nyckel för att kunna analysera bilder.
+                        Gå till <strong>Inställningar</strong> och ange din Anthropic API-nyckel.
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Analyze button */}
                 <button
-                  className={`btn btn-analyze ${!canAnalyze ? '' : ''}`}
+                  className="btn btn-analyze"
                   onClick={handleAnalyze}
                   disabled={!canAnalyze}
                 >
                   {isAnalyzing ? (
-                    <>
-                      <span className="spinner" />
-                      Analyserar...
-                    </>
+                    <><span className="spinner" />Analyserar...</>
                   ) : (
                     <>📡 Analysera bilden</>
                   )}
@@ -262,7 +265,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Result screen */}
             {screen === 'result' && analysisResult && (
               <AnalysisView
                 imageDataUrl={processedDataUrl ?? imageDataUrl!}
@@ -274,7 +276,18 @@ export default function App() {
           </>
         )}
 
-        {/* ─── HISTORY TAB ─────────────────────────────── */}
+        {/* ─── FOTOTUR TAB ─── */}
+        {tab === 'walk' && (
+          <>
+            <div className="page-header">
+              <div className="page-title">Fototur</div>
+              <div className="page-subtitle">Välj objektiv och vad som sitter på kameran</div>
+            </div>
+            <PhotoWalkPanel walk={photoWalk} onChange={handlePhotoWalkChange} />
+          </>
+        )}
+
+        {/* ─── HISTORY TAB ─── */}
         {tab === 'history' && (
           <>
             {viewingHistoryItem ? (
@@ -300,7 +313,7 @@ export default function App() {
           </>
         )}
 
-        {/* ─── SETTINGS TAB ─────────────────────────────── */}
+        {/* ─── SETTINGS TAB ─── */}
         {tab === 'settings' && (
           <>
             <div className="page-header">
@@ -317,7 +330,9 @@ export default function App() {
         <div className="analyzing-overlay">
           <div className="analyzing-spinner" />
           <div className="analyzing-text">Analyserar scoutingbild...</div>
-          <div className="analyzing-subtext">Claude bedömer komposition, ljus och potential</div>
+          <div className="analyzing-subtext">
+            {walkIsActive ? 'Tar hänsyn till din fototur' : 'Claude bedömer komposition, ljus och potential'}
+          </div>
         </div>
       )}
 
@@ -325,10 +340,18 @@ export default function App() {
       <nav className="tab-bar">
         <button
           className={`tab-item ${tab === 'analyze' ? 'active' : ''}`}
-          onClick={() => { setTab('analyze'); if (tab !== 'analyze') { setScreen('home'); } }}
+          onClick={() => { setTab('analyze'); if (tab !== 'analyze') setScreen('home'); }}
         >
           <span className="tab-icon">📷</span>
           Analysera
+        </button>
+        <button
+          className={`tab-item ${tab === 'walk' ? 'active' : ''}`}
+          onClick={() => setTab('walk')}
+        >
+          <span className="tab-icon">🎒</span>
+          Fototur
+          {walkIsActive && <span className="tab-badge">{photoWalk.activeLensIds.length}</span>}
         </button>
         <button
           className={`tab-item ${tab === 'history' ? 'active' : ''}`}

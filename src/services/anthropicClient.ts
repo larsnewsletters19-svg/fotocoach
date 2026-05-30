@@ -1,4 +1,5 @@
 import type { MotiveType, StylePreference, AnalysisTone, TechnicalLevel, AnalysisResult } from '../types/analysis';
+import type { PhotoWalkSettings } from '../types/settings';
 import { resizeImage, getBase64FromDataUrl } from './imageUtils';
 import { parseAnalysisResult } from './jsonParser';
 import { SYSTEM_PROMPT, buildUserPrompt } from '../prompts/photoCoachPrompt';
@@ -24,6 +25,7 @@ export async function analyzePhoto(params: {
   stylePreference: StylePreference;
   analysisTone: AnalysisTone;
   technicalLevel: TechnicalLevel;
+  photoWalk: PhotoWalkSettings | null;
 }): Promise<AnalysisResult> {
   if (!params.apiKey || params.apiKey.trim().length < 10) {
     throw new ApiError(
@@ -53,6 +55,7 @@ export async function analyzePhoto(params: {
     stylePreference: params.stylePreference,
     analysisTone: params.analysisTone,
     technicalLevel: params.technicalLevel,
+    photoWalk: params.photoWalk,
   });
 
   let response: Response;

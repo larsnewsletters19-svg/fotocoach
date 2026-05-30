@@ -123,16 +123,12 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
         <div className="card">
           <div className="info-row">
             <div className="info-label">Version</div>
-            <div className="info-value">0.2.0 – Kameraråd Sony a6700</div>
-          </div>
-          <div className="info-row">
-            <div className="info-label">Modell</div>
-            <div className="info-value">Claude Sonnet 4</div>
+            <div className="info-value">0.3.0 – Fototur och objektivprofiler</div>
           </div>
           <div className="info-row">
             <div className="info-label">Kommande versioner</div>
             <div className="info-value">
-              Kameraråd, objektivprofiler, aktuell fototur, retake-läge, visuella overlays
+              Retake-läge, visuella overlays, personligt lärande
             </div>
           </div>
         </div>

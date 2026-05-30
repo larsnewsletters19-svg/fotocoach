@@ -1,5 +1,6 @@
 import type { MotiveType, StylePreference, AnalysisTone, TechnicalLevel } from '../types/analysis';
-import { getCameraContext, getLensContext } from '../data/cameraData';
+import type { PhotoWalkSettings } from '../types/settings';
+import { getCameraContext, getLensContext, SONY_LENSES } from '../data/cameraData';
 
 export const SYSTEM_PROMPT = `Du är en erfaren fotograf, fotolärare och praktisk fotocoach. Du hjälper användaren att analysera en scoutingbild innan den riktiga bilden tas. Du ska svara på svenska. Du ska vara konkret, prioriterad och handlingsorienterad. Du ska bara returnera giltig JSON enligt angivet schema. Ingen markdown. Ingen text före eller efter JSON.
 
@@ -29,7 +30,12 @@ Ge max 5 priorityActions. Varje action ska innehålla:
 - effort: "low", "medium" eller "high"
 - timing: "now", "wait" eller "optional"
 
-För cameraAdvice: välj det objektiv från listan som passar scenen bäst. Ge konkreta inställningsrekommendationer specifika för Sony a6700. Om ett annat objektiv vore bättre än det som sitter på kameran, nämn det i recommendedLens men förklara i focalLengthReason att det kräver objektivbyte.
+VIKTIGT för cameraAdvice:
+- Om fotografen har angett vilket objektiv som sitter på kameran: prioritera det i första hand
+- Om fotografen vill undvika objektivbyten: ge råd som fungerar med det monterade objektivet
+- Om ett annat objektiv på turen vore bättre: nämn det men markera tydligt att det kräver byte
+- Om inget objektivbyte finns tillgängligt: ge bästa råd med det som sitter på kameran
+- Ge alltid konkreta inställningar specifika för Sony a6700
 
 Returnera alltid denna exakta JSON-struktur och ingenting annat:
 
@@ -73,7 +79,7 @@ Returnera alltid denna exakta JSON-struktur och ingenting annat:
   "learningPoint": "...",
   "nextShotChecklist": ["...", "...", "..."],
   "cameraAdvice": {
-    "recommendedLens": "Sony 35mm f/1.8",
+    "recommendedLens": "Tamron 70–180mm f/2.8 Di III VC VXD",
     "focalLengthReason": "...",
     "aperture": "f/2.8",
     "apertureReason": "...",
@@ -91,11 +97,41 @@ Returnera alltid denna exakta JSON-struktur och ingenting annat:
   }
 }`;
 
+function buildPhotoWalkContext(walk: PhotoWalkSettings | null): string {
+  if (!walk || walk.activeLensIds.length === 0) return '';
+
+  const packedLenses = SONY_LENSES.filter((l) => walk.activeLensIds.includes(l.id));
+  const mountedLens = SONY_LENSES.find((l) => l.id === walk.mountedLensId);
+
+  const lines: string[] = [];
+  lines.push('─── AKTUELL FOTOTUR ────────────────────────────────');
+
+  if (mountedLens) {
+    lines.push(`Monterat objektiv (sitter på kameran nu): ${mountedLens.name} | ${mountedLens.focalLengthMm}mm | ${mountedLens.maxAperture} | Sweet spot: ${mountedLens.sweetSpotAperture}`);
+  }
+
+  if (packedLenses.length > 1) {
+    const others = packedLenses.filter((l) => l.id !== walk.mountedLensId);
+    lines.push(`Övriga objektiv med på turen: ${others.map((l) => l.name).join(', ')}`);
+  }
+
+  if (walk.avoidLensSwap) {
+    lines.push('Fotografen vill UNDVIKA objektivbyten – prioritera råd för det monterade objektivet.');
+  }
+  if (walk.hasTriPod) lines.push('Stativ: ja');
+  if (walk.hasFilters) lines.push('Filter: ja');
+  if (walk.notes?.trim()) lines.push(`Turnotering: ${walk.notes}`);
+
+  lines.push('────────────────────────────────────────────────────');
+  return lines.join('\n');
+}
+
 export function buildUserPrompt(params: {
   motiveType: MotiveType;
   stylePreference: StylePreference;
   analysisTone: AnalysisTone;
   technicalLevel: TechnicalLevel;
+  photoWalk: PhotoWalkSettings | null;
 }): string {
   const toneMap: Record<AnalysisTone, string> = {
     Uppmuntrande: 'Var varm och positiv i tonen men ändå tydlig och konkret med råden.',
@@ -111,6 +147,7 @@ export function buildUserPrompt(params: {
 
   const cameraCtx = getCameraContext();
   const lensCtx = getLensContext();
+  const walkCtx = buildPhotoWalkContext(params.photoWalk);
 
   return `Analysera den bifogade scoutingbilden.
 
@@ -119,14 +156,15 @@ Motivtyp: ${params.motiveType}
 Ton: ${toneMap[params.analysisTone]}
 Teknisk nivå: ${levelMap[params.technicalLevel]}
 
-─── KAMERAUTRUSTNING ───────────────────────────────
+─── KAMERA ─────────────────────────────────────────
 ${cameraCtx}
 
-TILLGÄNGLIGA OBJEKTIV (välj det bäst lämpade för scenen):
+─── ALLA TILLGÄNGLIGA OBJEKTIV ────────────────────
 ${lensCtx}
 ────────────────────────────────────────────────────
-
+${walkCtx ? '\n' + walkCtx : ''}
 Returnera din analys som JSON enligt exakt det schema du fick i systeminstruktionen.
 Inkludera alltid ett fullständigt cameraAdvice-objekt med konkreta inställningar för Sony a6700.
 Ingen annan text utanför JSON.`;
 }
+

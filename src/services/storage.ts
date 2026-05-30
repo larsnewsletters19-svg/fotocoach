@@ -1,11 +1,12 @@
-import type { AppSettings } from '../types/settings';
+import type { AppSettings, PhotoWalkSettings } from '../types/settings';
 import type { HistoryItem } from '../types/history';
-import { DEFAULT_SETTINGS } from '../types/settings';
+import { DEFAULT_SETTINGS, DEFAULT_PHOTO_WALK } from '../types/settings';
 import { MAX_HISTORY_ITEMS } from '../types/history';
 
 const KEYS = {
   SETTINGS: 'fotocoach_settings',
   HISTORY: 'fotocoach_history',
+  PHOTO_WALK: 'fotocoach_photowalk',
 } as const;
 
 // Settings
@@ -24,6 +25,25 @@ export function saveSettings(settings: AppSettings): void {
     localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
   } catch (e) {
     console.error('Failed to save settings', e);
+  }
+}
+
+// Photo walk
+export function loadPhotoWalk(): PhotoWalkSettings {
+  try {
+    const raw = localStorage.getItem(KEYS.PHOTO_WALK);
+    if (!raw) return { ...DEFAULT_PHOTO_WALK };
+    return { ...DEFAULT_PHOTO_WALK, ...JSON.parse(raw) };
+  } catch {
+    return { ...DEFAULT_PHOTO_WALK };
+  }
+}
+
+export function savePhotoWalk(walk: PhotoWalkSettings): void {
+  try {
+    localStorage.setItem(KEYS.PHOTO_WALK, JSON.stringify(walk));
+  } catch (e) {
+    console.error('Failed to save photo walk', e);
   }
 }
 
