@@ -37,6 +37,14 @@ VIKTIGT för cameraAdvice:
 - Om inget objektivbyte finns tillgängligt: ge bästa råd med det som sitter på kameran
 - Ge alltid konkreta inställningar specifika för Sony a6700
 
+VIKTIGT för overlays:
+- Alla koordinater är relativa till bildens bredd/höjd: 0.0 = vänsterkant/överkant, 1.0 = höger/nederkant
+- subjectBox: markera huvudmotivet med en bounding box {x, y, w, h}
+- distractionPoints: max 3 störande element, varje med {x, y, label}
+- cropBox: föreslagen beskärning som bounding box {x, y, w, h} – utelämna om ingen beskärning behövs
+- horizonY: estimerad horisonthöjd i bilden (0.0=topp, 1.0=botten) – utelämna om ingen klar horisont finns
+- Var rimlig med koordinaterna – de ska spegla vad du faktiskt ser i bilden
+
 Returnera alltid denna exakta JSON-struktur och ingenting annat:
 
 {
@@ -94,6 +102,14 @@ Returnera alltid denna exakta JSON-struktur och ingenting annat:
     "whiteBalance": "Auto",
     "fileFormat": "RAW",
     "extraTip": "..."
+  },
+  "overlays": {
+    "subjectBox": { "x": 0.3, "y": 0.2, "w": 0.25, "h": 0.5 },
+    "distractionPoints": [
+      { "x": 0.85, "y": 0.3, "label": "Skylt" }
+    ],
+    "cropBox": { "x": 0.05, "y": 0.0, "w": 0.9, "h": 0.85 },
+    "horizonY": 0.45
   }
 }`;
 

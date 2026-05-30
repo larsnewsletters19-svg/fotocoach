@@ -85,6 +85,30 @@ export type AnalysisResult = {
   learningPoint: string;
   nextShotChecklist: string[];
   cameraAdvice?: CameraAdvice;      // v0.2 – optional for backward compat
+  overlays?: ImageOverlays;         // v0.5 – optional for backward compat
+};
+
+// ─── Image overlays (v0.5) ───────────────────────────────────────────────────
+// All coordinates are 0.0–1.0 relative to image width/height
+
+export type BoundingBox = {
+  x: number;      // left edge, 0.0–1.0
+  y: number;      // top edge, 0.0–1.0
+  w: number;      // width, 0.0–1.0
+  h: number;      // height, 0.0–1.0
+};
+
+export type OverlayPoint = {
+  x: number;      // 0.0–1.0
+  y: number;      // 0.0–1.0
+  label: string;
+};
+
+export type ImageOverlays = {
+  subjectBox?: BoundingBox;           // main subject bounding box
+  distractionPoints?: OverlayPoint[]; // up to 3 distraction markers
+  cropBox?: BoundingBox;              // suggested crop rectangle
+  horizonY?: number;                  // 0.0–1.0, estimated horizon line
 };
 
 // ─── Retake comparison (v0.4) ────────────────────────────────────────────────

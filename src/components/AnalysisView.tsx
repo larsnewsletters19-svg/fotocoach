@@ -4,6 +4,7 @@ import { PriorityActions } from './PriorityActions';
 import { CompositionCard } from './CompositionCard';
 import { LightCard } from './LightCard';
 import { CameraAdviceCard } from './CameraAdviceCard';
+import { ImageOverlayCanvas } from './ImageOverlayCanvas';
 
 interface AnalysisViewProps {
   imageDataUrl: string;
@@ -21,18 +22,12 @@ export function AnalysisView({ imageDataUrl, result, onBack, onNewPhoto, onRetak
         ← Tillbaka
       </button>
 
-      {/* Scoutingbild */}
+      {/* Scoutingbild med overlays */}
       <div style={{ marginBottom: 16 }}>
-        <img
-          src={imageDataUrl}
-          alt="Analyserad bild"
-          style={{
-            width: '100%',
-            borderRadius: 'var(--radius-lg)',
-            objectFit: 'cover',
-            maxHeight: 280,
-            display: 'block',
-          }}
+        <ImageOverlayCanvas
+          imageDataUrl={imageDataUrl}
+          overlays={result.overlays}
+          verdict={result.verdict}
         />
       </div>
 

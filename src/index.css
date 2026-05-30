@@ -1783,3 +1783,89 @@ body {
   border-radius: 100px;
   margin-top: 4px;
 }
+
+/* ─── Image overlays (v0.5) ──────────────────────────────────────────────── */
+
+.overlay-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.overlay-canvas-container {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-elevated);
+  line-height: 0;
+}
+
+.overlay-canvas {
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+  object-fit: contain;
+  display: block;
+}
+
+.overlay-toggles {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.overlay-toggle-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  flex: 1;
+  min-width: 52px;
+}
+
+.overlay-toggle-btn:hover:not(.overlay-toggle-btn--disabled) {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.overlay-toggle-btn--active {
+  background: var(--accent-amber-dim);
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.overlay-toggle-btn--disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.overlay-toggle-emoji {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.overlay-toggle-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.overlay-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 4px 8px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+}
