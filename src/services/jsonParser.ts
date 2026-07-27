@@ -8,27 +8,39 @@ export class ParseError extends Error {
 }
 
 export function parseAnalysisResult(raw: string): AnalysisResult {
-  // Attempt 1: direct parse
-  try {
-    const parsed = JSON.parse(raw);
-    return validateAnalysisResult(parsed);
-  } catch {
-    // continue to extraction
-  }
+  // Rensa bort eventuell markdown (```json ... ```)
+  const stripped = raw
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
 
-  // Attempt 2: extract first JSON object
-  const match = raw.match(/\{[\s\S]*\}/);
+  // Försök 1: direkt parse
+  try {
+    const parsed = JSON.parse(stripped);
+    return validateAnalysisResult(parsed);
+  } catch { /* fortsätt */ }
+
+  // Försök 2: hitta första { ... } blocket
+  const match = stripped.match(/\{[\s\S]*\}/);
   if (match) {
     try {
       const parsed = JSON.parse(match[0]);
       return validateAnalysisResult(parsed);
-    } catch {
-      // continue to error
-    }
+    } catch { /* fortsätt */ }
+  }
+
+  // Försök 3: hitta sista kompletta JSON-objekt
+  const lastMatch = [...stripped.matchAll(/\{[\s\S]*?\}/g)].pop();
+  if (lastMatch) {
+    try {
+      const parsed = JSON.parse(lastMatch[0]);
+      return validateAnalysisResult(parsed);
+    } catch { /* fortsätt */ }
   }
 
   throw new ParseError(
-    'Kunde inte tolka AI-svaret. Modellen returnerade ogiltig JSON. Försök igen.'
+    'Kunde inte tolka AI-svaret. Försök igen — om felet kvarstår, kontakta support.'
   );
 }
 
@@ -40,18 +52,10 @@ function validateAnalysisResult(obj: unknown): AnalysisResult {
   const result = obj as Record<string, unknown>;
 
   const requiredFields = [
-    'verdict',
-    'confidence',
-    'oneSentenceReason',
-    'sceneType',
-    'mainSubject',
-    'priorityActions',
-    'composition',
-    'light',
-    'backgroundAndDistractions',
-    'whatAlreadyWorks',
-    'learningPoint',
-    'nextShotChecklist',
+    'verdict', 'confidence', 'oneSentenceReason', 'sceneType',
+    'mainSubject', 'priorityActions', 'composition', 'light',
+    'backgroundAndDistractions', 'whatAlreadyWorks',
+    'learningPoint', 'nextShotChecklist',
   ];
 
   for (const field of requiredFields) {
@@ -65,6 +69,5 @@ function validateAnalysisResult(obj: unknown): AnalysisResult {
     throw new ParseError(`Ogiltigt verdict: ${result.verdict}`);
   }
 
-  // cameraAdvice is optional – don't throw if missing
   return result as unknown as AnalysisResult;
 }
