@@ -6,7 +6,7 @@ import { SYSTEM_PROMPT, buildUserPrompt } from '../prompts/photoCoachPrompt';
 import { RETAKE_SYSTEM_PROMPT, buildRetakeUserPrompt } from '../prompts/retakePrompt';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-sonnet-4-20250514';
+const MODEL = 'claude-sonnet-5';
 
 export class ApiError extends Error {
   constructor(
