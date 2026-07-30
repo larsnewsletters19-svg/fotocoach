@@ -8,40 +8,36 @@ export class ParseError extends Error {
 }
 
 export function parseAnalysisResult(raw: string): AnalysisResult {
-  // Rensa bort eventuell markdown (```json ... ```)
-  const stripped = raw
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/```\s*$/i, '')
+  // Rensa markdown-kodblock som modellen kan lägga till
+  const cleaned = raw
+    .replace(/^```json\s*/im, '')
+    .replace(/^```\s*/im, '')
+    .replace(/```\s*$/im, '')
     .trim();
 
   // Försök 1: direkt parse
   try {
-    const parsed = JSON.parse(stripped);
-    return validateAnalysisResult(parsed);
+    return validateAnalysisResult(JSON.parse(cleaned));
   } catch { /* fortsätt */ }
 
-  // Försök 2: hitta första { ... } blocket
-  const match = stripped.match(/\{[\s\S]*\}/);
+  // Försök 2: hitta första { och sista } i texten
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    try {
+      return validateAnalysisResult(JSON.parse(cleaned.slice(start, end + 1)));
+    } catch { /* fortsätt */ }
+  }
+
+  // Försök 3: regex-match
+  const match = cleaned.match(/\{[\s\S]*\}/);
   if (match) {
     try {
-      const parsed = JSON.parse(match[0]);
-      return validateAnalysisResult(parsed);
+      return validateAnalysisResult(JSON.parse(match[0]));
     } catch { /* fortsätt */ }
   }
 
-  // Försök 3: hitta sista kompletta JSON-objekt
-  const lastMatch = [...stripped.matchAll(/\{[\s\S]*?\}/g)].pop();
-  if (lastMatch) {
-    try {
-      const parsed = JSON.parse(lastMatch[0]);
-      return validateAnalysisResult(parsed);
-    } catch { /* fortsätt */ }
-  }
-
-  throw new ParseError(
-    'Kunde inte tolka AI-svaret. Försök igen — om felet kvarstår, kontakta support.'
-  );
+  throw new ParseError('Kunde inte tolka AI-svaret. Försök igen.');
 }
 
 function validateAnalysisResult(obj: unknown): AnalysisResult {
@@ -69,5 +65,6 @@ function validateAnalysisResult(obj: unknown): AnalysisResult {
     throw new ParseError(`Ogiltigt verdict: ${result.verdict}`);
   }
 
+  // cameraAdvice och overlays är valfria – kasta ej fel om de saknas
   return result as unknown as AnalysisResult;
 }
