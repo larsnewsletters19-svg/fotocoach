@@ -112,7 +112,7 @@ export async function analyzePhoto(params: {
       },
       body: JSON.stringify({
         model,
-        max_tokens: 3000,
+        max_tokens: 8000,
         system: SYSTEM_PROMPT,
         messages: [
           {
