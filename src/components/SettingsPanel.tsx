@@ -143,7 +143,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
           </div>
           <div className="info-row">
             <div className="info-label">Modell</div>
-            <div className="info-value">Claude Sonnet 4</div>
+            <div className="info-value">Claude Sonnet 5</div>
           </div>
           <div className="info-row">
             <div className="info-label">Kameror</div>
