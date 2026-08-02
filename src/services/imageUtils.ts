@@ -1,5 +1,5 @@
-const MAX_DIMENSION = 1568;
-const JPEG_QUALITY = 0.82;
+const MAX_DIMENSION = 1024;
+const JPEG_QUALITY = 0.78;
 
 export async function resizeImage(dataUrl: string): Promise<string> {
   return new Promise((resolve, reject) => {
