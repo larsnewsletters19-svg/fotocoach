@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { APP_VERSION_LABEL } from '../version';
 import type { AppSettings, ThemePreference } from '../types/settings';
 import type { AnalysisTone, TechnicalLevel } from '../types/analysis';
 
