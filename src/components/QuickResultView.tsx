@@ -2,9 +2,9 @@ import type { QuickAnalysis, Verdict } from '../types/analysis';
 import { VerdictCard } from './VerdictCard';
 
 const VERDICT_CONFIG: Record<Verdict, { color: string; bg: string; border: string }> = {
-  TA_INTE: { color: 'var(--verdict-no)', bg: 'var(--verdict-no-bg)', border: 'var(--verdict-no-border)' },
-  JUSTERA_FORST: { color: 'var(--verdict-adjust)', bg: 'var(--verdict-adjust-bg)', border: 'var(--verdict-adjust-border)' },
-  TA_NU: { color: 'var(--verdict-go)', bg: 'var(--verdict-go-bg)', border: 'var(--verdict-go-border)' },
+  TA_INTE:      { color: 'var(--verdict-no)',     bg: 'var(--verdict-no-bg)',     border: 'var(--verdict-no-border)'     },
+  JUSTERA_FORST:{ color: 'var(--verdict-adjust)', bg: 'var(--verdict-adjust-bg)', border: 'var(--verdict-adjust-border)' },
+  TA_NU:        { color: 'var(--verdict-go)',     bg: 'var(--verdict-go-bg)',     border: 'var(--verdict-go-border)'     },
 };
 
 interface QuickResultViewProps {
@@ -28,7 +28,6 @@ export function QuickResultView({
 }: QuickResultViewProps) {
   const cfg = VERDICT_CONFIG[quick.verdict];
 
-  // Bygg ett minimalt AnalysisResult-kompatibelt objekt för VerdictCard
   const fakeResult = {
     verdict: quick.verdict,
     confidence: quick.confidence,
@@ -60,7 +59,7 @@ export function QuickResultView({
       {/* Verdict */}
       <VerdictCard result={fakeResult} />
 
-      {/* Snabba åtgärder */}
+      {/* Åtgärder */}
       {quick.priorityActions.length > 0 && (
         <div className="card">
           <div className="card-header">
@@ -81,55 +80,51 @@ export function QuickResultView({
         </div>
       )}
 
-      {/* Divider */}
-      <div className="quick-divider">
-        <span>Vill du ha mer detaljer?</span>
-      </div>
-
-      {/* Fullständig analys */}
-      <button
-        className="btn btn-secondary"
-        style={{ width: '100%', gap: 10 }}
-        onClick={onFullAnalysis}
-        disabled={isLoadingFull}
-      >
-        {isLoadingFull ? (
-          <><span className="spinner spinner-amber" />Laddar fullständig analys...</>
-        ) : (
-          <>🔬 Visa fullständig analys</>
-        )}
-      </button>
-
-      {/* Retake */}
-      {quick.verdict !== 'TA_INTE' && (
-        <button
-          className="btn btn-secondary"
-          style={{ width: '100%', borderColor: 'var(--accent-amber-glow)', color: 'var(--accent-amber)' }}
-          onClick={onRetake}
-          disabled={isLoadingFull}
-        >
-          🔄 Retake – ta ny bild och jämför
-        </button>
-      )}
-
-      {/* Ny bild */}
-      <button
-        className="btn btn-primary"
-        style={{ width: '100%' }}
-        onClick={onNewPhoto}
-      >
-        📷 Ny bild
-      </button>
-
-      {/* TA NU-indikator */}
+      {/* TA NU-banner */}
       {quick.readyToShoot && (
         <div className="quick-ready-banner" style={{ background: cfg.bg, borderColor: cfg.border }}>
-          <span style={{ fontSize: 20 }}>✅</span>
-          <span style={{ color: cfg.color, fontWeight: 700, fontSize: 14 }}>
+          <span style={{ fontSize: 20, flexShrink: 0 }}>✅</span>
+          <span style={{ color: cfg.color, fontWeight: 700, fontSize: 14, lineHeight: 1.4 }}>
             Scenen är klar — ta bilden nu med din riktiga kamera!
           </span>
         </div>
       )}
+
+      {/* Divider */}
+      <div className="quick-divider">
+        <span>Mer detaljer?</span>
+      </div>
+
+      {/* Knappar */}
+      <div className="quick-actions">
+        <button
+          className="btn btn-secondary quick-action-btn"
+          onClick={onFullAnalysis}
+          disabled={isLoadingFull}
+        >
+          {isLoadingFull
+            ? <><span className="spinner spinner-amber" /><span>Analyserar...</span></>
+            : <><span>🔬</span><span>Fullständig analys</span></>
+          }
+        </button>
+
+        {quick.verdict !== 'TA_INTE' && (
+          <button
+            className="btn btn-secondary quick-action-btn quick-action-btn--retake"
+            onClick={onRetake}
+            disabled={isLoadingFull}
+          >
+            <span>🔄</span><span>Retake</span>
+          </button>
+        )}
+
+        <button
+          className="btn btn-primary quick-action-btn"
+          onClick={onNewPhoto}
+        >
+          <span>📷</span><span>Ny bild</span>
+        </button>
+      </div>
 
       <div style={{ height: 8 }} />
     </div>

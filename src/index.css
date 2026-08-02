@@ -2096,3 +2096,56 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+
+/* ─── Quick action buttons (v0.7 fix) ───────────────────────────────────── */
+
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quick-action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.quick-action-btn span {
+  flex-shrink: 0;
+}
+
+.quick-action-btn--retake {
+  border-color: var(--accent-amber-glow);
+  color: var(--accent-amber);
+}
+
+/* Chip overflow fix – wrap and truncate long words */
+.chip {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  white-space: nowrap;
+}
+
+/* Radio options – prevent overflow */
+.radio-option {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+/* Ensure all btn children align correctly */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
