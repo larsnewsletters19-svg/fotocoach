@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { MotiveType, StylePreference, AnalysisResult, RetakeComparison } from './types/analysis';
+import type { MotiveType, StylePreference, AnalysisResult, RetakeComparison, QuickAnalysis } from './types/analysis';
 import type { AppSettings, PhotoWalkSettings } from './types/settings';
 import type { HistoryItem } from './types/history';
 import {
@@ -7,10 +7,11 @@ import {
   loadHistory, addHistoryItem, updateHistoryItem, clearHistory,
   loadPhotoWalk, savePhotoWalk,
 } from './services/storage';
-import { analyzePhoto, retakePhoto, ApiError } from './services/anthropicClient';
+import { quickAnalyzePhoto, analyzePhoto, retakePhoto, ApiError } from './services/anthropicClient';
 import { resizeImage } from './services/imageUtils';
-import { useTheme, resolveTheme } from './hooks/useTheme';
+import { useTheme } from './hooks/useTheme';
 import { ImagePicker } from './components/ImagePicker';
+import { QuickResultView } from './components/QuickResultView';
 import { AnalysisView } from './components/AnalysisView';
 import { RetakePanel } from './components/RetakePanel';
 import { HistoryList } from './components/HistoryList';
@@ -19,7 +20,7 @@ import { PhotoWalkPanel } from './components/PhotoWalkPanel';
 import { APP_VERSION } from './version';
 
 type Tab = 'analyze' | 'walk' | 'history' | 'settings';
-type Screen = 'home' | 'result' | 'retake';
+type Screen = 'home' | 'quick' | 'result' | 'retake';
 
 const MOTIVE_TYPES: MotiveType[] = [
   'Auto', 'Resa', 'Gatufoto', 'Porträtt', 'Mat', 'Landskap', 'Arkitektur', 'Detalj',
@@ -44,7 +45,12 @@ export default function App() {
   const [motiveType, setMotiveType] = useState<MotiveType>('Auto');
   const [stylePreference, setStylePreference] = useState<StylePreference>('Naturlig');
 
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  // Quick analysis state
+  const [isQuickAnalyzing, setIsQuickAnalyzing] = useState(false);
+  const [quickResult, setQuickResult] = useState<QuickAnalysis | null>(null);
+
+  // Full analysis state
+  const [isFullAnalyzing, setIsFullAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
@@ -54,8 +60,7 @@ export default function App() {
 
   // ─── Theme ───
   useTheme(settings.theme ?? 'auto');
-
-  const resolvedTheme = resolveTheme(settings.theme ?? 'auto');
+  
 
   function cycleTheme() {
     const order = ['auto', 'light', 'dark'] as const;
@@ -80,6 +85,7 @@ export default function App() {
   // ─── Image ───
   const handleImageSelected = useCallback(async (dataUrl: string) => {
     setImageDataUrl(dataUrl);
+    setQuickResult(null);
     setAnalysisResult(null);
     setAnalysisError(null);
     try {
@@ -92,17 +98,50 @@ export default function App() {
   const handleImageCleared = useCallback(() => {
     setImageDataUrl(null);
     setProcessedDataUrl(null);
+    setQuickResult(null);
     setAnalysisResult(null);
     setAnalysisError(null);
   }, []);
 
-  // ─── Analyze ───
-  const handleAnalyze = useCallback(async () => {
+  // Helper: build photo walk param
+  function getWalkParam() {
+    return photoWalk.cameraType === 'sony-a6700' && photoWalk.activeLensIds.length > 0
+      ? photoWalk
+      : photoWalk.cameraType !== 'sony-a6700' ? photoWalk : null;
+  }
+
+  // ─── Step 1: Quick analysis ───
+  const handleQuickAnalyze = useCallback(async () => {
     if (!imageDataUrl || !settings.anthropicApiKey) {
       if (!settings.anthropicApiKey) setAnalysisError('API-nyckel saknas. Gå till Inställningar.');
       return;
     }
-    setIsAnalyzing(true);
+    setIsQuickAnalyzing(true);
+    setAnalysisError(null);
+    try {
+      const quick = await quickAnalyzePhoto({
+        imageDataUrl,
+        apiKey: settings.anthropicApiKey,
+        motiveType,
+        stylePreference,
+        analysisTone: settings.analysisTone,
+        technicalLevel: settings.technicalLevel,
+        photoWalk: getWalkParam(),
+        cameraType: photoWalk.cameraType,
+      });
+      setQuickResult(quick);
+      setScreen('quick');
+    } catch (err) {
+      setAnalysisError(err instanceof ApiError || err instanceof Error ? err.message : 'Okänt fel.');
+    } finally {
+      setIsQuickAnalyzing(false);
+    }
+  }, [imageDataUrl, settings, motiveType, stylePreference, photoWalk]);
+
+  // ─── Step 2: Full analysis ───
+  const handleFullAnalysis = useCallback(async () => {
+    if (!imageDataUrl) return;
+    setIsFullAnalyzing(true);
     setAnalysisError(null);
     try {
       const result = await analyzePhoto({
@@ -112,9 +151,7 @@ export default function App() {
         stylePreference,
         analysisTone: settings.analysisTone,
         technicalLevel: settings.technicalLevel,
-        photoWalk: photoWalk.cameraType === 'sony-a6700' && photoWalk.activeLensIds.length > 0
-          ? photoWalk
-          : photoWalk.cameraType !== 'sony-a6700' ? photoWalk : null,
+        photoWalk: getWalkParam(),
         cameraType: photoWalk.cameraType,
       });
       setAnalysisResult(result);
@@ -132,8 +169,9 @@ export default function App() {
       setHistory(addHistoryItem(item));
     } catch (err) {
       setAnalysisError(err instanceof ApiError || err instanceof Error ? err.message : 'Okänt fel.');
+      setScreen('quick'); // fall back to quick result
     } finally {
-      setIsAnalyzing(false);
+      setIsFullAnalyzing(false);
     }
   }, [imageDataUrl, settings, motiveType, stylePreference, processedDataUrl, photoWalk]);
 
@@ -157,18 +195,22 @@ export default function App() {
     return comparison;
   }, [analysisResult, processedDataUrl, imageDataUrl, settings.anthropicApiKey, currentHistoryId]);
 
-  const handleRetakeDone = useCallback(() => setScreen('result'), []);
+  const handleRetakeDone = useCallback(() => {
+    setScreen(analysisResult ? 'result' : 'quick');
+  }, [analysisResult]);
 
   // ─── Navigation ───
   const handleBack = useCallback(() => {
     if (viewingHistoryItem) { setViewingHistoryItem(null); return; }
-    if (screen === 'retake') { setScreen('result'); return; }
+    if (screen === 'retake') { setScreen(analysisResult ? 'result' : 'quick'); return; }
+    if (screen === 'result') { setScreen('quick'); return; }
     setScreen('home');
-  }, [viewingHistoryItem, screen]);
+  }, [viewingHistoryItem, screen, analysisResult]);
 
   const handleNewPhoto = useCallback(() => {
     setImageDataUrl(null);
     setProcessedDataUrl(null);
+    setQuickResult(null);
     setAnalysisResult(null);
     setAnalysisError(null);
     setCurrentHistoryId(null);
@@ -182,12 +224,10 @@ export default function App() {
     }
   }, []);
 
-  const canAnalyze = imageDataUrl !== null && !isAnalyzing;
-
+  const canAnalyze = imageDataUrl !== null && !isQuickAnalyzing;
   const cameraLabel = photoWalk.cameraType === 'sony-a6700'
-    ? `Sony α6700 · ${photoWalk.activeLensIds.length} obj.`
-    : photoWalk.cameraType === 'iphone-16' ? 'iPhone 16'
-    : 'Samsung S25';
+    ? `Sony α6700${photoWalk.activeLensIds.length > 0 ? ` · ${photoWalk.activeLensIds.length} obj.` : ''}`
+    : photoWalk.cameraType === 'iphone-16' ? 'iPhone 16' : 'Samsung S25';
 
   return (
     <div className="app-container">
@@ -199,15 +239,10 @@ export default function App() {
           <span className="nav-version">v{APP_VERSION}</span>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <button
-            className="theme-toggle-btn"
-            onClick={cycleTheme}
-            title={`Tema: ${settings.theme ?? 'auto'} – tryck för att byta`}
-            aria-label="Byt tema"
-          >
+          <button className="theme-toggle-btn" onClick={cycleTheme} title="Byt tema">
             {themeIcon}
           </button>
-          {tab === 'analyze' && screen === 'result' && analysisResult && (
+          {tab === 'analyze' && (screen === 'quick' || screen === 'result') && (
             <button className="nav-btn" onClick={handleNewPhoto} title="Ny analys">＋</button>
           )}
         </div>
@@ -218,9 +253,9 @@ export default function App() {
         {/* ─── ANALYZE ─── */}
         {tab === 'analyze' && (
           <>
+            {/* HOME */}
             {screen === 'home' && (
               <div>
-                {/* Walk status pill */}
                 <div className="walk-status-bar" onClick={() => setTab('walk')}>
                   <span className="walk-status-dot" />
                   <span className="walk-status-text">
@@ -275,12 +310,29 @@ export default function App() {
                   </div>
                 )}
 
-                <button className="btn btn-analyze" onClick={handleAnalyze} disabled={!canAnalyze}>
-                  {isAnalyzing ? <><span className="spinner" />Analyserar...</> : <>📡 Analysera bilden</>}
+                <button className="btn btn-analyze" onClick={handleQuickAnalyze} disabled={!canAnalyze}>
+                  {isQuickAnalyzing
+                    ? <><span className="spinner" />Analyserar...</>
+                    : <>📡 Analysera bilden</>
+                  }
                 </button>
               </div>
             )}
 
+            {/* QUICK RESULT */}
+            {screen === 'quick' && quickResult && (
+              <QuickResultView
+                imageDataUrl={processedDataUrl ?? imageDataUrl!}
+                quick={quickResult}
+                isLoadingFull={isFullAnalyzing}
+                onFullAnalysis={handleFullAnalysis}
+                onRetake={handleStartRetake}
+                onNewPhoto={handleNewPhoto}
+                onBack={handleBack}
+              />
+            )}
+
+            {/* FULL RESULT */}
             {screen === 'result' && analysisResult && (
               <AnalysisView
                 imageDataUrl={processedDataUrl ?? imageDataUrl!}
@@ -291,16 +343,30 @@ export default function App() {
               />
             )}
 
-            {screen === 'retake' && analysisResult && (
+            {/* RETAKE */}
+            {screen === 'retake' && (
               <div>
-                <button className="back-btn" onClick={handleBack}>← Tillbaka till analys</button>
+                <button className="back-btn" onClick={handleBack}>← Tillbaka</button>
                 <div className="page-header" style={{ marginBottom: 16 }}>
                   <div className="page-title">Retake</div>
                   <div className="page-subtitle">Följ råden, ta en ny bild och jämför</div>
                 </div>
                 <RetakePanel
                   originalImageDataUrl={processedDataUrl ?? imageDataUrl!}
-                  originalResult={analysisResult}
+                  originalResult={analysisResult ?? {
+                    verdict: quickResult?.verdict ?? 'JUSTERA_FORST',
+                    confidence: quickResult?.confidence ?? 0.8,
+                    oneSentenceReason: quickResult?.oneSentenceReason ?? '',
+                    sceneType: quickResult?.sceneType ?? '',
+                    mainSubject: '',
+                    priorityActions: quickResult?.priorityActions ?? [],
+                    composition: { overallScore: 0, ruleOfThirds: '', leadingLines: '', foregroundMiddleBackground: '', backgroundCleanliness: '', negativeSpace: '', edgesAndDistractions: '', cropSuggestion: '' },
+                    light: { overallScore: 0, direction: '', quality: '', contrast: '', exposureRisk: '', whiteBalance: '', bestLightAction: '' },
+                    backgroundAndDistractions: '',
+                    whatAlreadyWorks: [],
+                    learningPoint: '',
+                    nextShotChecklist: [],
+                  }}
                   apiKey={settings.anthropicApiKey}
                   onCompare={handleCompareRetake}
                   onDone={handleRetakeDone}
@@ -369,12 +435,17 @@ export default function App() {
         )}
       </main>
 
-      {isAnalyzing && (
+      {/* Analyzing overlay */}
+      {(isQuickAnalyzing || isFullAnalyzing) && (
         <div className="analyzing-overlay">
           <div className="analyzing-spinner" />
-          <div className="analyzing-text">Analyserar scoutingbild...</div>
-          <div className="analyzing-subtext">
-            {resolvedTheme === 'light' ? 'Ljust tema aktivt' : 'Mörkt tema aktivt'} · {cameraLabel}
+          <div className="analyzing-text">
+            {isQuickAnalyzing ? 'Snabbanalys...' : 'Fullständig analys...'}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'center' }}>
+            <div className="analyzing-subtext">{cameraLabel}</div>
+            {isQuickAnalyzing && <div className="analyzing-quick-badge">Steg 1 av 2</div>}
+            {isFullAnalyzing && <div className="analyzing-quick-badge">Steg 2 av 2</div>}
           </div>
         </div>
       )}

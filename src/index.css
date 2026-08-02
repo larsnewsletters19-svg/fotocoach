@@ -2050,3 +2050,49 @@ body {
   border-color: rgba(196,125,16,0.2);
   border-top-color: var(--accent-amber);
 }
+
+/* ─── Quick analysis (v0.7) ──────────────────────────────────────────────── */
+
+.quick-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+.quick-divider::before,
+.quick-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.quick-ready-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid;
+  margin-top: 4px;
+  font-family: var(--font-display);
+  line-height: 1.4;
+}
+
+/* Analyzing overlay subtext for quick mode */
+.analyzing-quick-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent-amber);
+  background: var(--accent-amber-dim);
+  border: 1px solid var(--accent-amber-glow);
+  padding: 4px 12px;
+  border-radius: 100px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}

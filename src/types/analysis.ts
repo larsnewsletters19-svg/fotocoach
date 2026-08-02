@@ -34,6 +34,17 @@ export type PriorityAction = {
   timing: TimingType;
 };
 
+// ─── Quick analysis (v0.7) ───────────────────────────────────────────────────
+
+export type QuickAnalysis = {
+  verdict: Verdict;
+  confidence: number;
+  oneSentenceReason: string;
+  sceneType: string;
+  priorityActions: PriorityAction[];   // max 3
+  readyToShoot: boolean;               // true = TA NU direkt
+};
+
 // ─── Camera advice (v0.2) ────────────────────────────────────────────────────
 
 export type CameraAdvice = {

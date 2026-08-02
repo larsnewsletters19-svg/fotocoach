@@ -1,2 +1,2 @@
-export const APP_VERSION = '0.6.1';
-export const APP_VERSION_LABEL = '0.6.1 – Snabbare analys';
+export const APP_VERSION = '0.7.0';
+export const APP_VERSION_LABEL = '0.7 – Tvåstegsanalys';
