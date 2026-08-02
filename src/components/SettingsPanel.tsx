@@ -139,7 +139,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
         <div className="card">
           <div className="info-row">
             <div className="info-label">Version</div>
-            <div className="info-value">0.6.0 – Ljust/mörkt tema & mobilkameror</div>
+            <div className="info-value">{APP_VERSION_LABEL}</div>
           </div>
           <div className="info-row">
             <div className="info-label">Modell</div>
