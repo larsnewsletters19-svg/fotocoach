@@ -217,13 +217,34 @@ export function buildUserPrompt(params: {
 
   const cameraSection = buildCameraSection(params.cameraType, params.photoWalk);
 
+  const hardLightContext = params.motiveType === 'Hårt ljus' ? `
+─── HÅRT LJUS – FOTOGRAFERINGSFILOSOFI ────────────────
+Fotografen fotograferar medvetet i hårt mittdagsljus. Tillämpa dessa principer i analysen:
+
+1. SOLENS RIKTNING: Solen ska vara framför fotografen (180°-regeln) – aldrig i ryggen. Djupa skuggor i scenen är ett tecken på rätt position. Saknas skuggor är scenen platt.
+
+2. SOLEN UTANFÖR BILDEN: Solen ska inte synas i bilden (om inte bakom tjockt dis/moln). Men den ska vara framför och skapa skuggor.
+
+3. KONTRAST SOM VERKTYG: Djupa skuggor utan detalj är okej – de skapar fokus och mystik. Uppmana inte fotografen att fylla på skuggorna. Kontrasten är en styrka.
+
+4. RYMD OCH NEGATIVT UTRYMME: Hårt ljus fungerar bäst med enkla, luftiga kompositioner. Ljus himmel utan detaljer är ett plus – den drar uppmärksamheten mot motivet.
+
+5. ENKLA KOMPOSITIONER (KISS): Undvik komplexa bakgrunder – röriga skuggor förstör bilden snabbt. Rekommendera enkla, centrerade kompositioner om bakgrunden är komplex.
+
+6. HELA SKUGGOR: Om scenen har skuggor ska de inkluderas helt i bilden – avklippta skuggor ser aldrig bra ut.
+
+7. SPEGLINGAR: Vid kust/vatten med högt stående sol kan vattnet vara lika ljust som himlen – det tillåter extremt ljus exponering.
+
+Bedöm bilden utifrån dessa principer. Ge råd som hjälper fotografen att utnyttja det hårda ljuset – inte undvika det.
+────────────────────────────────────────────────────────` : '';
+
   return `Analysera den bifogade scoutingbilden.
 
 Motivtyp: ${params.motiveType}
 Önskad bildstil: ${params.stylePreference}
 Ton: ${toneMap[params.analysisTone]}
 Teknisk nivå: ${levelMap[params.technicalLevel]}
-
+${hardLightContext}
 ${cameraSection}
 
 Returnera din analys som JSON enligt exakt det schema du fick i systeminstruktionen.

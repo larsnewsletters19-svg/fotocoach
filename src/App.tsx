@@ -23,7 +23,7 @@ type Tab = 'analyze' | 'walk' | 'history' | 'settings';
 type Screen = 'home' | 'quick' | 'result' | 'retake';
 
 const MOTIVE_TYPES: MotiveType[] = [
-  'Auto', 'Resa', 'Gatufoto', 'Porträtt', 'Mat', 'Landskap', 'Arkitektur', 'Detalj',
+  'Auto', 'Resa', 'Gatufoto', 'Porträtt', 'Mat', 'Landskap', 'Arkitektur', 'Detalj', 'Hårt ljus',
 ];
 const STYLE_PREFS: StylePreference[] = [
   'Naturlig', 'Filmisk', 'Dramatisk', 'Minimalistisk', 'Dokumentär',

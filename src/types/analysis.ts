@@ -8,7 +8,8 @@ export type MotiveType =
   | 'Mat'
   | 'Landskap'
   | 'Arkitektur'
-  | 'Detalj';
+  | 'Detalj'
+  | 'Hårt ljus';
 
 export type StylePreference =
   | 'Naturlig'

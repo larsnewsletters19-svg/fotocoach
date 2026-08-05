@@ -62,12 +62,16 @@ export function buildQuickUserPrompt(params: {
     if (mobile) cameraLine = `Kamera: ${getMobileCameraContext(mobile).split('\n')[0]}`;
   }
 
+  const hardLightNote = params.motiveType === 'Hårt ljus'
+    ? `\nHårt ljus-läge: Solen framför (180°), djupa skuggor är okej och önskvärda, kontrast är en styrka, enkla kompositioner, hela skuggor i bild, negativt utrymme fungerar bra.`
+    : '';
+
   return `Gör en snabb bedömning av scoutingbilden.
 
 Motivtyp: ${params.motiveType}
 Stil: ${params.stylePreference}
 ${toneMap[params.analysisTone]}
-${cameraLine}
+${cameraLine}${hardLightNote}
 
 Returnera JSON enligt schemat. Max 3 åtgärder. Var konkret och kort.`;
 }
