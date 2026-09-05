@@ -2149,3 +2149,69 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+/* ─── Lightroom export (v0.8) ────────────────────────────────────────────── */
+
+.lr-section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.lr-value-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-family: var(--font-display);
+}
+
+.lr-value-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.lr-value-number {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 48px;
+  text-align: right;
+}
+
+.lr-reasoning {
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--accent-amber-dim);
+  border: 1px solid var(--accent-amber-glow);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.lr-download-btn {
+  width: 100%;
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.lr-hint {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: 1.5;
+}

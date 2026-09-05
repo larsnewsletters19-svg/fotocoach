@@ -5,6 +5,7 @@ import { CompositionCard } from './CompositionCard';
 import { LightCard } from './LightCard';
 import { CameraAdviceCard } from './CameraAdviceCard';
 import { ImageOverlayCanvas } from './ImageOverlayCanvas';
+import { LightroomExportCard } from './LightroomExportCard';
 
 interface AnalysisViewProps {
   imageDataUrl: string;
@@ -77,6 +78,11 @@ export function AnalysisView({ imageDataUrl, result, onBack, onNewPhoto, onRetak
       {/* Kameraråd Sony a6700 */}
       {result.cameraAdvice && (
         <CameraAdviceCard advice={result.cameraAdvice} />
+      )}
+
+      {/* Lightroom-export */}
+      {result.lightroomAdjustments && (
+        <LightroomExportCard adjustments={result.lightroomAdjustments} />
       )}
 
       {/* Lärdom */}

@@ -98,6 +98,26 @@ export type AnalysisResult = {
   nextShotChecklist: string[];
   cameraAdvice?: CameraAdvice;      // v0.2 – optional for backward compat
   overlays?: ImageOverlays;         // v0.5 – optional for backward compat
+  lightroomAdjustments?: LightroomAdjustments; // v0.8 – optional for backward compat
+};
+
+// ─── Lightroom / Camera Raw export (v0.8) ────────────────────────────────────
+// Alla värden matchar Lightroom/ACR-skalor så de kan skrivas direkt till XMP
+
+export type LightroomAdjustments = {
+  whiteBalanceTemp: number;    // Kelvin, t.ex. 5500
+  whiteBalanceTint: number;    // -150 till +150
+  exposure: number;            // EV, t.ex. -0.3 till +2.0, ett decimaltal
+  contrast: number;            // -100 till +100
+  highlights: number;          // -100 till +100
+  shadows: number;             // -100 till +100
+  whites: number;              // -100 till +100
+  blacks: number;              // -100 till +100
+  clarity: number;             // -100 till +100
+  dehaze: number;              // -100 till +100
+  vibrance: number;            // -100 till +100
+  saturation: number;          // -100 till +100
+  reasoning: string;           // kort motivering på svenska
 };
 
 // ─── Image overlays (v0.5) ───────────────────────────────────────────────────

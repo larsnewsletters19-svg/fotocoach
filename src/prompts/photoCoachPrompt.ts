@@ -46,6 +46,18 @@ VIKTIGT för overlays:
 - horizonY: estimerad horisonthöjd i bilden (0.0=topp, 1.0=botten) – utelämna om ingen klar horisont finns
 - Var rimlig med koordinaterna – de ska spegla vad du faktiskt ser i bilden
 
+VIKTIGT för lightroomAdjustments:
+- Ge konkreta, hjälpsamma efterbearbetningsförslag anpassade efter vad du ser i just denna bild
+- whiteBalanceTemp: uppskatta rätt färgtemperatur i Kelvin (2000–50000) utifrån bildens nuvarande ljus
+- whiteBalanceTint: grön/magenta-balans, oftast nära 0 om inget uppenbart färgfel finns
+- exposure: föreslå EV-justering om bilden är över- eller underexponerad (annars 0)
+- highlights/shadows/whites/blacks: motverka clipping och förstärk dynamik baserat på histogrammet du kan bedöma visuellt
+- clarity: positiv för att förstärka textur/struktur, negativ för mjukare känsla (porträtt)
+- dehaze: positiv om bilden har dis/dimma att skära igenom, annars 0
+- vibrance/saturation: små justeringar för att förstärka färg utan att göra bilden onaturlig
+- reasoning: en kort mening på svenska som förklarar huvudtanken bakom justeringarna
+- Alla numeriska värden ska vara rimliga och matcha vad bilden faktiskt behöver – inte alltid samma standardvärden
+
 Returnera alltid denna exakta JSON-struktur och ingenting annat:
 
 {
@@ -111,6 +123,21 @@ Returnera alltid denna exakta JSON-struktur och ingenting annat:
     ],
     "cropBox": { "x": 0.05, "y": 0.0, "w": 0.9, "h": 0.85 },
     "horizonY": 0.45
+  },
+  "lightroomAdjustments": {
+    "whiteBalanceTemp": 5500,
+    "whiteBalanceTint": 0,
+    "exposure": 0.3,
+    "contrast": 10,
+    "highlights": -40,
+    "shadows": 20,
+    "whites": -10,
+    "blacks": 5,
+    "clarity": 5,
+    "dehaze": 0,
+    "vibrance": 10,
+    "saturation": 0,
+    "reasoning": "..."
   }
 }`;
 
